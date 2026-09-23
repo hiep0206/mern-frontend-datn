@@ -1,0 +1,170 @@
+/* --- BỐ CỤC CHUNG --- */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 15px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+/* --- 3 KHỐI THỐNG KÊ (Thu, Chi, Số dư) --- */
+.summary-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 25px;
+  /* Thuộc tính quan trọng giúp tự động xuống dòng nếu thiếu chỗ */
+  flex-wrap: wrap; 
+}
+
+.summary-card {
+  flex: 1;
+  min-width: 30%;
+  padding: 20px 15px;
+  border-radius: 10px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.summary-card h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.summary-card p {
+  margin: 0;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+/* Màu sắc 3 khối */
+.income { background-color: #2ecc71; }
+.expense { background-color: #e74c3c; }
+.balance { background-color: #3498db; }
+
+/* --- CÁC THẺ NỘI DUNG (Cards) --- */
+.card {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 25px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.card h2 {
+  margin-top: 0;
+  font-size: 18px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+/* --- FORM THÊM GIAO DỊCH --- */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* Sửa lỗi ô input bị tràn viền */
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #dcdde1;
+  border-radius: 6px;
+  box-sizing: border-box; 
+  font-size: 15px;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 14px;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.btn-submit:hover { background-color: #27ae60; }
+
+/* --- KHU VỰC AI --- */
+.ai-card {
+  background: #fafafa;
+}
+
+.btn-ai {
+  width: 100%;
+  padding: 14px;
+  background-color: #9b59b6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 15px;
+  transition: 0.3s;
+}
+.btn-ai:hover { background-color: #8e44ad; }
+.btn-ai:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+
+.ai-result {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #9b59b6;
+  line-height: 1.6;
+}
+
+/* --- LỊCH SỬ GIAO DỊCH --- */
+.transaction-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.transaction-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.transaction-list li:last-child {
+  border-bottom: none;
+}
+
+.expense-item .amount { color: #e74c3c; font-weight: bold; font-size: 16px; }
+.income-item .amount { color: #2ecc71; font-weight: bold; font-size: 16px; }
+
+/* =========================================
+   TỐI ƯU GIAO DIỆN CHO ĐIỆN THOẠI (MOBILE)
+   ========================================= */
+@media (max-width: 768px) {
+  .summary-container {
+    flex-direction: column; /* Ép 3 khối Thu/Chi/Số dư xếp dọc xuống nhau */
+    gap: 12px;
+  }
+  
+  .summary-card {
+    width: 100%; /* Trải rộng toàn màn hình điện thoại */
+  }
+
+  .transaction-list li {
+    flex-direction: column; /* Đẩy số tiền và nút xóa xuống hàng dưới */
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
