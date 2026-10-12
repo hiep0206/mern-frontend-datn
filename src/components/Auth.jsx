@@ -40,6 +40,8 @@ const Auth = ({ onLoginSuccess }) => {
                 return;
             }
         }
+        
+        setIsLoading(true);
         try {
             const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
             const res = await axios.post(`https://api-tai-chinh.onrender.com${endpoint}`, {
@@ -56,6 +58,8 @@ const Auth = ({ onLoginSuccess }) => {
             }
         } catch (error) {
             alert('❌ Lỗi: ' + (error.response?.data?.message || 'Không thể kết nối!'));
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -87,6 +91,8 @@ const Auth = ({ onLoginSuccess }) => {
             alert('❌ Mật khẩu yếu! Cần ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.');
             return;
         }
+        
+        setIsLoading(true);
         try {
             await axios.post('https://api-tai-chinh.onrender.com/api/auth/reset-password', {
                 email: formData.email, otp: formData.otp, newPassword: formData.newPassword
@@ -97,6 +103,8 @@ const Auth = ({ onLoginSuccess }) => {
             setCountdown(0);
         } catch (error) {
             alert('❌ Lỗi: ' + (error.response?.data?.message || 'Mã OTP không hợp lệ hoặc đã hết hạn!'));
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -150,8 +158,8 @@ const Auth = ({ onLoginSuccess }) => {
                         <span style={{ color: '#1a73e8', fontSize: '14px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => setForgotStep(3)}>
                             Thử cách khác
                         </span>
-                        <button type="submit" style={{ padding: '10px 24px', background: '#1a73e8', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}>
-                            Tiếp theo
+                        <button type="submit" disabled={isLoading} style={{ padding: '10px 24px', background: isLoading ? '#95a5a6' : '#1a73e8', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold' }}>
+                            {isLoading ? '⏳ Đang xử lý...' : 'Tiếp theo'}
                         </button>
                     </div>
                 </form>
@@ -240,8 +248,8 @@ const Auth = ({ onLoginSuccess }) => {
                     </div>
                 )}
 
-                <button type="submit" style={btnStyle}>
-                    {isLogin ? 'Đăng Nhập' : 'Tạo Tài Khoản'}
+                <button type="submit" disabled={isLoading} style={{ ...btnStyle, background: isLoading ? '#95a5a6' : '#3498db' }}>
+                    {isLoading ? '⏳ Đang xử lý...' : (isLogin ? 'Đăng Nhập' : 'Tạo Tài Khoản')}
                 </button>
             </form>
             <p style={{ textAlign: 'center', marginTop: '25px', cursor: 'pointer', color: '#1a73e8', fontWeight: 'bold' }}
