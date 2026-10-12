@@ -19,7 +19,7 @@ const ProfileModal = ({ onClose, token }) => {
 
         setLoading(true);
         try {
-            await axios.post('http://localhost:5000/api/auth/change-password', passForm, {
+            await axios.post('https://api-tai-chinh.onrender.com/api/auth/change-password', passForm, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert('✅ Đổi mật khẩu thành công!');

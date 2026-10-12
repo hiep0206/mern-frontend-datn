@@ -42,7 +42,7 @@ const Auth = ({ onLoginSuccess }) => {
         }
         try {
             const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-            const res = await axios.post(`http://localhost:5000${endpoint}`, {
+            const res = await axios.post(`https://api-tai-chinh.onrender.com${endpoint}`, {
                 username: formData.username, email: formData.email, password: formData.password
             });
 
@@ -69,7 +69,7 @@ const Auth = ({ onLoginSuccess }) => {
 
         setIsLoading(true);
         try {
-            await axios.post('http://localhost:5000/api/auth/forgot-password', { email: formData.email });
+            await axios.post('https://api-tai-chinh.onrender.com/api/auth/forgot-password', { email: formData.email });
             setForgotStep(2); // Chuyển sang bước nhập OTP
             setCountdown(60); // Bắt đầu đếm ngược 60s
         } catch (error) {
@@ -88,7 +88,7 @@ const Auth = ({ onLoginSuccess }) => {
             return;
         }
         try {
-            await axios.post('http://localhost:5000/api/auth/reset-password', {
+            await axios.post('https://api-tai-chinh.onrender.com/api/auth/reset-password', {
                 email: formData.email, otp: formData.otp, newPassword: formData.newPassword
             });
             alert('🎉 Cập nhật mật khẩu thành công! Mời bạn đăng nhập lại.');

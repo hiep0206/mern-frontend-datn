@@ -10,7 +10,7 @@ import UserDropdown from './components/UserDropdown';
 import './App.css';
 
 const requestTransactions = async (token) => {
-  const res = await axios.get('http://localhost:5000/api/transactions', {
+  const res = await axios.get('https://api-tai-chinh.onrender.com/api/transactions', {
     headers: { Authorization: `Bearer ${token}` }
   });
 
@@ -86,7 +86,7 @@ function App() {
     e.preventDefault();
     try {
       const dataToSend = { ...formData, amount: Number(formData.amount) };
-      await axios.post('http://localhost:5000/api/transactions', dataToSend, {
+      await axios.post('https://api-tai-chinh.onrender.com/api/transactions', dataToSend, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -104,7 +104,7 @@ function App() {
   const handleGetAIAdvice = async () => {
     setLoadingAI(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/insights/generate', {}, {
+      const res = await axios.post('https://api-tai-chinh.onrender.com/api/insights/generate', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAiAdvice(res.data.insight.aiResponse);
@@ -119,7 +119,7 @@ function App() {
     const isConfirm = window.confirm('Bạn có chắc chắn muốn xóa giao dịch này không?');
     if (!isConfirm) return;
     try {
-      await axios.delete(`http://localhost:5000/api/transactions/${id}`, {
+      await axios.delete(`https://api-tai-chinh.onrender.com/api/transactions/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchTransactions();

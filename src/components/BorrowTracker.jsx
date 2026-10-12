@@ -39,7 +39,7 @@ const BorrowTracker = () => {
   const fetchRecords = async () => {
     if (!token) return;
     try {
-      const response = await fetch('http://localhost:5000/api/borrows', {
+      const response = await fetch('https://api-tai-chinh.onrender.com/api/borrows', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -83,7 +83,7 @@ const BorrowTracker = () => {
         submitData.itemName = ''; submitData.amount = Number(submitData.amount);
       }
 
-      const url = editingId ? `http://localhost:5000/api/borrows/${editingId}` : 'http://localhost:5000/api/borrows';
+      const url = editingId ? `https://api-tai-chinh.onrender.com/api/borrows/${editingId}` : 'https://api-tai-chinh.onrender.com/api/borrows';
       const method = editingId ? 'PUT' : 'POST';
 
       const res = await fetch(url, { 
@@ -120,7 +120,7 @@ const BorrowTracker = () => {
       if(!window.confirm('Xác nhận đã nhận lại / trả lại đồ vật này?')) return;
     }
     
-    const res = await fetch(`http://localhost:5000/api/borrows/${record._id}/payment`, {
+    const res = await fetch(`https://api-tai-chinh.onrender.com/api/borrows/${record._id}/payment`, {
       method: 'PUT', 
       headers: { 
         'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ const BorrowTracker = () => {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Xóa khoản này vĩnh viễn?")) return;
-    const res = await fetch(`http://localhost:5000/api/borrows/${id}`, { 
+    const res = await fetch(`https://api-tai-chinh.onrender.com/api/borrows/${id}`, { 
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
