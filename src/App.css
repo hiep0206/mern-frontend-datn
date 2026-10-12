@@ -389,11 +389,10 @@
 
 /* =========================================
    TỐI ƯU CHO ĐIỆN THOẠI (MOBILE)
-   Đặt cuối file để luôn ghi đè đúng các rule bên trên
    ========================================= */
 @media (max-width: 768px) {
   h1 {
-    font-size: 22px; /* Tránh tiêu đề bị rớt dòng */
+    font-size: 22px;
     margin-bottom: 25px;
   }
 
@@ -404,7 +403,6 @@
 
   .card { padding: 20px 15px; border-radius: 16px; overflow: hidden; }
 
-  /* Căn giữa biểu đồ trên mobile */
   .recharts-wrapper { margin: 0 auto !important; }
 
   .transaction-list li {
@@ -421,6 +419,12 @@
   .transaction-list button {
     width: 100%;
     padding: 12px !important;
+  }
+
+  /* Chuyển form nhập công nợ thành 1 cột dọc trên mobile để không bị tràn */
+  .borrow-form {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
   }
 }
 
@@ -442,7 +446,7 @@
 /* --- RESPONSIVE: CHUYỂN BẢNG THÀNH CARD TRÊN ĐIỆN THOẠI --- */
 @media screen and (max-width: 768px) {
   .borrow-table thead {
-    display: none; /* Ẩn tiêu đề cột */
+    display: none;
   }
   
   .borrow-table, .borrow-table tbody, .borrow-table tr, .borrow-table td {
@@ -470,10 +474,9 @@
   .borrow-table td:last-child {
     border-bottom: none;
     text-align: center;
-    padding: 15px 10px 5px 10px; /* Bỏ padding trái của nút bấm */
+    padding: 15px 10px 5px 10px;
   }
   
-  /* Tạo nhãn ảo thay cho tiêu đề cột */
   .borrow-table td::before {
     content: attr(data-label);
     position: absolute;
