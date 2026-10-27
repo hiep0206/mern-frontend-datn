@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { apiUrl } from '../config/api';
 
 const UserDropdown = ({ onOpenProfile, onLogout, onSwitchAccount }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -10,7 +11,7 @@ const UserDropdown = ({ onOpenProfile, onLogout, onSwitchAccount }) => {
     // Lấy thông tin user hiện tại và danh sách các tài khoản đã từng đăng nhập
     const currentUser = JSON.parse(localStorage.getItem('user')) || { username: 'Người dùng', email: 'chưa có' };
     const savedAccounts = JSON.parse(localStorage.getItem('saved_accounts')) || [currentUser];
-    
+
     const firstLetter = currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'H';
 
     // Đóng menu khi click ra ngoài
@@ -32,8 +33,7 @@ const UserDropdown = ({ onOpenProfile, onLogout, onSwitchAccount }) => {
             setIsOpen(false);
             return;
         }
-        // Ở đây có thể yêu cầu nhập lại mật khẩu hoặc chuyển đổi trực tiếp nếu lưu token tương ứng. 
-        // Để bảo mật tài chính, ta sẽ mở nhanh form đăng nhập với email đó:
+        // Yêu cầu nhập lại mật khẩu trước khi chuyển tài khoản.
         setLoginForm({ email: account.email, password: '' });
         setShowAddAccount(true);
     };
@@ -42,13 +42,13 @@ const UserDropdown = ({ onOpenProfile, onLogout, onSwitchAccount }) => {
     const handleAddAccountSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await axios.post('https://api-tai-chinh.onrender.com/api/auth/login', loginForm);
+            const res = await axios.post(apiUrl('/api/auth/login'), loginForm);
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
-            
+
             // Lưu vào danh sách các tài khoản đã nhớ trên thiết bị
-            let accounts = JSON.parse(localStorage.getItem('saved_accounts')) || [];
-            if (!accounts.some(acc => acc.email === res.data.user.email)) {
+            const accounts = JSON.parse(localStorage.getItem('saved_accounts')) || [];
+            if (!accounts.some((account) => account.email === res.data.user.email)) {
                 accounts.push(res.data.user);
                 localStorage.setItem('saved_accounts', JSON.stringify(accounts));
             }
@@ -62,7 +62,7 @@ const UserDropdown = ({ onOpenProfile, onLogout, onSwitchAccount }) => {
     return (
         <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
             {/* Avatar Tròn góc trên bên phải */}
-            <div 
+            <div
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
                     width: '40px', height: '40px', borderRadius: '50%', background: '#8e44ad', color: 'white',
@@ -104,23 +104,23 @@ const UserDropdown = ({ onOpenProfile, onLogout, onSwitchAccount }) => {
                             </div>
 
                             {/* Danh sách các tài khoản khác đã lưu trên thiết bị (Chuyển đổi nhanh) */}
-                            {savedAccounts.filter(acc => acc.email !== currentUser.email).length > 0 && (
+                            {savedAccounts.filter((account) => account.email !== currentUser.email).length > 0 && (
                                 <div style={{ padding: '5px 0', borderBottom: '1px solid #f1f3f4' }}>
                                     <div style={{ padding: '5px 20px', fontSize: '11px', color: '#5f6368', fontWeight: 'bold', textTransform: 'uppercase' }}>Tài khoản khác trên thiết bị</div>
-                                    {savedAccounts.filter(acc => acc.email !== currentUser.email).map((acc, index) => (
-                                        <div 
+                                    {savedAccounts.filter((account) => account.email !== currentUser.email).map((account, index) => (
+                                        <div
                                             key={index}
-                                            onClick={() => handleQuickLogin(acc)}
+                                            onClick={() => handleQuickLogin(account)}
                                             style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', transition: 'background 0.2s' }}
-                                            onMouseEnter={(e) => e.currentTarget.style.background = '#f1f3f4'}
-                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f3f4'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                                         >
                                             <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#3498db', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '14px', fontWeight: 'bold' }}>
-                                                {acc.username.charAt(0).toUpperCase()}
+                                                {(account.username || 'U').charAt(0).toUpperCase()}
                                             </div>
                                             <div style={{ overflow: 'hidden', flex: 1 }}>
-                                                <div style={{ fontSize: '14px', fontWeight: '500', color: '#3c4043' }}>{acc.username}</div>
-                                                <div style={{ fontSize: '12px', color: '#5f6368' }}>{acc.email}</div>
+                                                <div style={{ fontSize: '14px', fontWeight: '500', color: '#3c4043' }}>{account.username}</div>
+                                                <div style={{ fontSize: '12px', color: '#5f6368' }}>{account.email}</div>
                                             </div>
                                         </div>
                                     ))}
@@ -129,20 +129,20 @@ const UserDropdown = ({ onOpenProfile, onLogout, onSwitchAccount }) => {
 
                             {/* Các tùy chọn hành động hệ thống */}
                             <div style={{ padding: '8px 0', borderBottom: '1px solid #f1f3f4' }}>
-                                <div 
+                                <div
                                     onClick={() => setShowAddAccount(true)}
                                     style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', fontSize: '14px', color: '#3c4043', fontWeight: '500' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#f1f3f4'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f3f4'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                                 >
                                     <span>➕</span> Thêm tài khoản khác
                                 </div>
 
-                                <div 
+                                <div
                                     onClick={() => { setIsOpen(false); onOpenProfile(); }}
                                     style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', fontSize: '14px', color: '#3c4043', fontWeight: '500' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#f1f3f4'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f3f4'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                                 >
                                     <span>⚙️</span> Hồ sơ & Quản lý bảo mật
                                 </div>
@@ -150,11 +150,11 @@ const UserDropdown = ({ onOpenProfile, onLogout, onSwitchAccount }) => {
 
                             {/* Nút Đăng xuất */}
                             <div style={{ padding: '8px 0' }}>
-                                <div 
+                                <div
                                     onClick={() => { setIsOpen(false); onLogout(); }}
                                     style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', fontSize: '14px', color: '#d9534f', fontWeight: 'bold' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#fcf0f0'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                    onMouseEnter={(e) => { e.currentTarget.style.background = '#fcf0f0'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                                 >
                                     <span>🚪</span> Đăng xuất khỏi tài khoản này
                                 </div>
@@ -167,11 +167,11 @@ const UserDropdown = ({ onOpenProfile, onLogout, onSwitchAccount }) => {
                             <form onSubmit={handleAddAccountSubmit}>
                                 <div style={{ marginBottom: '12px' }}>
                                     <label style={{ fontSize: '12px', color: '#5f6368', fontWeight: 'bold' }}>Email:</label>
-                                    <input type="email" required placeholder="email@example.com" value={loginForm.email} onChange={(e) => setLoginForm({...loginForm, email: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #dadce0', boxSizing: 'border-box', marginTop: '5px' }} />
+                                    <input type="email" required placeholder="email@example.com" value={loginForm.email} onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #dadce0', boxSizing: 'border-box', marginTop: '5px' }} />
                                 </div>
                                 <div style={{ marginBottom: '15px' }}>
                                     <label style={{ fontSize: '12px', color: '#5f6368', fontWeight: 'bold' }}>Mật khẩu:</label>
-                                    <input type="password" required placeholder="Mật khẩu" value={loginForm.password} onChange={(e) => setLoginForm({...loginForm, password: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #dadce0', boxSizing: 'border-box', marginTop: '5px' }} />
+                                    <input type="password" required placeholder="Mật khẩu" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #dadce0', boxSizing: 'border-box', marginTop: '5px' }} />
                                 </div>
                                 <div style={{ display: 'flex', gap: '10px' }}>
                                     <button type="button" onClick={() => setShowAddAccount(false)} style={{ flex: 1, padding: '10px', background: '#f1f3f4', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', color: '#3c4043' }}>Quay lại</button>

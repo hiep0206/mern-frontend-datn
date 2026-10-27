@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { apiUrl } from '../config/api';
 
 const ProfileModal = ({ onClose, token }) => {
     const user = JSON.parse(localStorage.getItem('user')) || { username: 'Người dùng', email: 'chưa cập nhật' };
-    
+
     // Quản lý tab bên trong modal (0: Thông tin chung, 1: Đổi mật khẩu, 2: Bảo mật nâng cao)
     const [activeTab, setActiveTab] = useState(0);
     const [passForm, setPassForm] = useState({ oldPassword: '', newPassword: '' });
@@ -19,7 +20,7 @@ const ProfileModal = ({ onClose, token }) => {
 
         setLoading(true);
         try {
-            await axios.post('https://api-tai-chinh.onrender.com/api/auth/change-password', passForm, {
+            await axios.post(apiUrl('/api/auth/change-password'), passForm, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert('✅ Đổi mật khẩu thành công!');
@@ -49,7 +50,7 @@ const ProfileModal = ({ onClose, token }) => {
                         display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '24px', fontWeight: 'bold',
                         boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
                     }}>
-                        {user.username.charAt(0).toUpperCase()}
+                        {(user.username || 'N').charAt(0).toUpperCase()}
                     </div>
                     <div>
                         <h2 style={{ margin: 0, fontSize: '20px' }}>{user.username}</h2>
@@ -62,7 +63,7 @@ const ProfileModal = ({ onClose, token }) => {
                     }}>✕</button>
                 </div>
 
-                {/* Thanh điều hướng Tab (Sidebar/Menu nhỏ bên trong) */}
+                {/* Thanh điều hướng Tab */}
                 <div style={{ display: 'flex', background: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
                     <button onClick={() => setActiveTab(0)} style={{
                         flex: 1, padding: '15px', background: activeTab === 0 ? '#fff' : 'transparent',
@@ -118,20 +119,18 @@ const ProfileModal = ({ onClose, token }) => {
                             <h3 style={{ fontSize: '16px', color: '#2c3e50', marginBottom: '15px' }}>Thay đổi mật khẩu đăng nhập</h3>
                             <div style={{ marginBottom: '15px' }}>
                                 <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: 'bold', color: '#555' }}>Mật khẩu hiện tại:</label>
-                                <input type="password" required placeholder="Nhập mật khẩu hiện tại" 
-                                       value={passForm.oldPassword} 
-                                       onChange={(e) => setPassForm({...passForm, oldPassword: e.target.value})} 
-                                       style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ced4da', boxSizing: 'border-box' }}/>
+                                <input type="password" required placeholder="Nhập mật khẩu hiện tại"
+                                    value={passForm.oldPassword}
+                                    onChange={(e) => setPassForm({ ...passForm, oldPassword: e.target.value })}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ced4da', boxSizing: 'border-box' }} />
                             </div>
-                            
                             <div style={{ marginBottom: '20px' }}>
                                 <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: 'bold', color: '#555' }}>Mật khẩu mới:</label>
-                                <input type="password" required placeholder="Ít nhất 8 ký tự, có chữ hoa, số & ký tự đặc biệt" 
-                                       value={passForm.newPassword} 
-                                       onChange={(e) => setPassForm({...passForm, newPassword: e.target.value})} 
-                                       style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ced4da', boxSizing: 'border-box' }}/>
+                                <input type="password" required placeholder="Ít nhất 8 ký tự, có chữ hoa, số & ký tự đặc biệt"
+                                    value={passForm.newPassword}
+                                    onChange={(e) => setPassForm({ ...passForm, newPassword: e.target.value })}
+                                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ced4da', boxSizing: 'border-box' }} />
                             </div>
-                            
                             <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: '#2ecc71', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px' }}>
                                 {loading ? '⏳ Đang xử lý...' : 'Cập nhật mật khẩu mới'}
                             </button>

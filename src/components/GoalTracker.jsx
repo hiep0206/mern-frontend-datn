@@ -1,38 +1,61 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { apiUrl } from '../config/api';
 
 const GoalTracker = ({ token, refreshKey, currentBalance }) => {
-  // Vì chưa có API Backend cho phần này, ta tạm dùng LocalStorage để lưu trữ
-  const [goals, setGoals] = useState(() => {
-    const saved = localStorage.getItem('financial_goals');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [goals, setGoals] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [newGoal, setNewGoal] = useState({ name: '', targetAmount: '', deadline: '' });
 
-  // Lưu vào LocalStorage mỗi khi danh sách mục tiêu thay đổi
-  useEffect(() => {
-    localStorage.setItem('financial_goals', JSON.stringify(goals));
-  }, [goals]);
+  // Gọi API lấy danh sách mục tiêu
+  const fetchGoals = async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(apiUrl('/api/goals'), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setGoals(res.data);
+    } catch (error) {
+      console.error('Lỗi tải mục tiêu:', error);
+    }
+  };
 
-  const handleAddGoal = (e) => {
+  useEffect(() => {
+    fetchGoals();
+  }, [token, refreshKey]);
+
+  // Thêm mục tiêu mới
+  const handleAddGoal = async (e) => {
     e.preventDefault();
     if (!newGoal.name || !newGoal.targetAmount) return;
 
-    const newGoalItem = {
-      id: Date.now().toString(),
-      name: newGoal.name,
-      targetAmount: Number(newGoal.targetAmount),
-      deadline: newGoal.deadline,
-      createdAt: new Date().toISOString()
-    };
-
-    setGoals([...goals, newGoalItem]);
-    setNewGoal({ name: '', targetAmount: '', deadline: '' });
-    setIsAdding(false);
+    try {
+      await axios.post(apiUrl('/api/goals'), {
+        name: newGoal.name,
+        targetAmount: Number(newGoal.targetAmount),
+        deadline: newGoal.deadline
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setNewGoal({ name: '', targetAmount: '', deadline: '' });
+      setIsAdding(false);
+      fetchGoals();
+    } catch (error) {
+      alert('❌ Không thể thêm mục tiêu');
+    }
   };
 
-  const handleDeleteGoal = (id) => {
-    setGoals(goals.filter(g => g.id !== id));
+  // Xóa mục tiêu
+  const handleDeleteGoal = async (id) => {
+    try {
+      await axios.delete(apiUrl(`/api/goals/${id}`), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchGoals();
+    } catch (error) {
+      alert('❌ Không thể xóa mục tiêu');
+    }
   };
 
   return (
@@ -84,13 +107,12 @@ const GoalTracker = ({ token, refreshKey, currentBalance }) => {
       ) : (
         <div style={{ display: 'grid', gap: '15px' }}>
           {goals.map(goal => {
-            // Tính toán tiến độ dựa trên Tổng Số Dư hiện tại
             const progress = currentBalance > 0 ? (currentBalance / goal.targetAmount) * 100 : 0;
             const cappedProgress = Math.min(progress, 100);
             const isCompleted = currentBalance >= goal.targetAmount;
 
             return (
-              <div key={goal.id} style={{ border: '1px solid #e1e8ed', padding: '15px', borderRadius: '8px', background: isCompleted ? '#f0fff4' : 'white' }}>
+              <div key={goal._id} style={{ border: '1px solid #e1e8ed', padding: '15px', borderRadius: '8px', background: isCompleted ? '#f0fff4' : 'white' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                   <div>
                     <h4 style={{ margin: '0 0 5px 0', color: '#2c3e50' }}>{goal.name} {isCompleted && '🎉'}</h4>
@@ -98,7 +120,7 @@ const GoalTracker = ({ token, refreshKey, currentBalance }) => {
                       {goal.deadline ? `Hạn: ${new Date(goal.deadline).toLocaleDateString('vi-VN')}` : 'Không có hạn'}
                     </span>
                   </div>
-                  <button onClick={() => handleDeleteGoal(goal.id)} style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: '16px' }}>✖</button>
+                  <button onClick={() => handleDeleteGoal(goal._id)} style={{ background: 'transparent', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: '16px' }}>✖</button>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '5px' }}>

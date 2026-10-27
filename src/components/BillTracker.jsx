@@ -1,79 +1,97 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { CreditCard, Clock, CheckCircle2, Plus } from 'lucide-react';
+import { apiUrl } from '../config/api';
 
 function BillTracker() {
-  // 1. Tự động lấy dữ liệu từ localStorage (Trống nếu chưa có gì)
-  const [bills, setBills] = useState(() => {
-    const savedBills = localStorage.getItem('moneo_bills');
-    if (savedBills) return JSON.parse(savedBills);
-    return []; // Không còn dữ liệu code cứng nữa
-  });
-  
+  const [bills, setBills] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newBill, setNewBill] = useState({ title: '', amount: '', dueDate: '' });
   const [isProcessing, setIsProcessing] = useState(false);
   const token = localStorage.getItem('token');
 
-  // 2. Tự động lưu mọi thay đổi của hóa đơn vào bộ nhớ trình duyệt
-  useEffect(() => {
-    localStorage.setItem('moneo_bills', JSON.stringify(bills));
-  }, [bills]);
-
-  // Hàm xử lý thêm hóa đơn từ Giao diện
-  const handleAddBill = (e) => {
-    e.preventDefault();
-    const bill = {
-      id: Date.now(), // Tạo ID ngẫu nhiên
-      title: newBill.title,
-      amount: Number(newBill.amount),
-      dueDate: newBill.dueDate,
-      status: 'pending' // Mặc định là chưa thanh toán
-    };
-    setBills([...bills, bill]);
-    setNewBill({ title: '', amount: '', dueDate: '' });
-    setShowAddForm(false);
+  const fetchBills = async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get(apiUrl('/api/bills'), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBills(res.data);
+    } catch (error) {
+      console.error('Lỗi tải hóa đơn:', error);
+    }
   };
 
-  // Hàm xử lý thanh toán và bắn API tạo giao dịch
+  useEffect(() => {
+    fetchBills();
+  }, [token]);
+
+  const handleAddBill = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(apiUrl('/api/bills'), {
+        title: newBill.title,
+        amount: Number(newBill.amount),
+        dueDate: newBill.dueDate
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setNewBill({ title: '', amount: '', dueDate: '' });
+      setShowAddForm(false);
+      fetchBills();
+    } catch (error) {
+      alert('❌ Lỗi thêm hóa đơn!');
+    }
+  };
+
   const handlePayBill = async (billId, title, amount) => {
     const isConfirm = window.confirm(`Xác nhận thanh toán "${title}" trị giá ${amount.toLocaleString('vi-VN')} đ?\n\nHành động này sẽ tự động tạo một giao dịch chi phí.`);
     if (!isConfirm) return;
 
     setIsProcessing(true);
     try {
-      // Bắn API lên Backend để tạo giao dịch thực
-      await axios.post('https://api-tai-chinh.onrender.com/api/transactions', {
+      const today = new Date();
+      const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      // Tạo giao dịch chi phí
+      await axios.post(apiUrl('/api/transactions'), {
         amount: Number(amount),
         type: 'expense',
         category: 'Nhà cửa',
-        note: `Thanh toán hóa đơn: ${title}`
+        note: `Thanh toán hóa đơn: ${title}`,
+        date: formattedDate
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      // Đổi trạng thái hóa đơn thành 'paid' và ép lưu vào localStorage ngay lập tức
-      const updatedBills = bills.map(b => b.id === billId ? { ...b, status: 'paid' } : b);
-      setBills(updatedBills);
-      localStorage.setItem('moneo_bills', JSON.stringify(updatedBills));
+      // Cập nhật trạng thái hóa đơn thành 'paid'
+      await axios.put(apiUrl(`/api/bills/${billId}`), { status: 'paid' }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
       alert(`✅ Đã thanh toán và ghi nhận khoản chi ${amount.toLocaleString('vi-VN')} đ vào hệ thống!`);
       
-      // Reload lại trang (Lúc này an toàn vì dữ liệu hóa đơn đã nằm trong bộ nhớ)
-      window.location.reload();
+      fetchBills();
+      window.location.reload(); // Tải lại để cập nhật biểu đồ & giao dịch tổng
 
     } catch (error) {
       alert('❌ Lỗi khi đồng bộ thanh toán. Vui lòng thử lại!');
-      console.error(error);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Hàm xóa hóa đơn (Tùy chọn)
-  const handleDelete = (billId) => {
-    if(window.confirm('Bạn muốn xóa hóa đơn này khỏi danh sách?')) {
-      setBills(bills.filter(b => b.id !== billId));
+  const handleDelete = async (billId) => {
+    if (window.confirm('Bạn muốn xóa hóa đơn này khỏi danh sách?')) {
+      try {
+        await axios.delete(apiUrl(`/api/bills/${billId}`), {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        fetchBills();
+      } catch (error) {
+        alert('❌ Lỗi xóa hóa đơn');
+      }
     }
   };
 
@@ -90,7 +108,6 @@ function BillTracker() {
         </button>
       </div>
 
-      {/* FORM THÊM HÓA ĐƠN TRÊN GIAO DIỆN */}
       {showAddForm && (
         <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
           <form onSubmit={handleAddBill} style={{ display: 'grid', gap: '12px' }}>
@@ -116,7 +133,6 @@ function BillTracker() {
         </div>
       )}
       
-      {/* DANH SÁCH HÓA ĐƠN */}
       {bills.length === 0 ? (
         <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '20px 0' }}>
           Bạn chưa thêm hóa đơn nào.
@@ -124,7 +140,7 @@ function BillTracker() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {bills.map(bill => (
-            <div key={bill.id} style={{ 
+            <div key={bill._id} style={{ 
               display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
               padding: '16px', borderRadius: '12px', border: '1px solid',
               borderColor: bill.status === 'paid' ? '#e2e8f0' : '#bbf7d0',
@@ -143,7 +159,7 @@ function BillTracker() {
                     {bill.title}
                   </h4>
                   <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Clock size={12} /> Hạn chót: {bill.dueDate}
+                    <Clock size={12} /> Hạn chót: {new Date(bill.dueDate).toLocaleDateString('vi-VN')}
                   </div>
                 </div>
               </div>
@@ -155,7 +171,7 @@ function BillTracker() {
                 
                 {bill.status === 'pending' ? (
                   <button 
-                    onClick={() => handlePayBill(bill.id, bill.title, bill.amount)}
+                    onClick={() => handlePayBill(bill._id, bill.title, bill.amount)}
                     disabled={isProcessing}
                     style={{
                       background: '#0D9668', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', 
@@ -170,7 +186,7 @@ function BillTracker() {
                       Đã hoàn tất
                     </span>
                     <button 
-                      onClick={() => handleDelete(bill.id)}
+                      onClick={() => handleDelete(bill._id)}
                       style={{ background: 'transparent', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: 0 }}
                       title="Xóa hóa đơn"
                     >

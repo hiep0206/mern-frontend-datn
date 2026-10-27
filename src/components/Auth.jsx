@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { apiUrl } from '../config/api';
 
 const Auth = ({ onLoginSuccess }) => {
     // Các state cơ bản
@@ -40,18 +41,18 @@ const Auth = ({ onLoginSuccess }) => {
                 return;
             }
         }
-        
+
         setIsLoading(true);
         try {
             const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-            const res = await axios.post(`https://api-tai-chinh.onrender.com${endpoint}`, {
+            const res = await axios.post(apiUrl(endpoint), {
                 username: formData.username, email: formData.email, password: formData.password
             });
 
             if (isLogin) {
                 localStorage.setItem('token', res.data.token);
                 localStorage.setItem('user', JSON.stringify(res.data.user));
-                onLoginSuccess(res.data.token);
+                onLoginSuccess(res.data.token, res.data.user);
             } else {
                 alert('🎉 Đăng ký thành công! Mời bạn đăng nhập.');
                 setIsLogin(true);
@@ -73,7 +74,7 @@ const Auth = ({ onLoginSuccess }) => {
 
         setIsLoading(true);
         try {
-            await axios.post('https://api-tai-chinh.onrender.com/api/auth/forgot-password', { email: formData.email });
+            await axios.post(apiUrl('/api/auth/forgot-password'), { email: formData.email });
             setForgotStep(2); // Chuyển sang bước nhập OTP
             setCountdown(60); // Bắt đầu đếm ngược 60s
         } catch (error) {
@@ -91,10 +92,10 @@ const Auth = ({ onLoginSuccess }) => {
             alert('❌ Mật khẩu yếu! Cần ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.');
             return;
         }
-        
+
         setIsLoading(true);
         try {
-            await axios.post('https://api-tai-chinh.onrender.com/api/auth/reset-password', {
+            await axios.post(apiUrl('/api/auth/reset-password'), {
                 email: formData.email, otp: formData.otp, newPassword: formData.newPassword
             });
             alert('🎉 Cập nhật mật khẩu thành công! Mời bạn đăng nhập lại.');

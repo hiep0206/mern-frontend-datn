@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiUrl } from '../config/api';
 
 const getDefaultDueDate = () => {
   const d = new Date();
@@ -25,13 +26,13 @@ const BorrowTracker = () => {
   const [historyRecord, setHistoryRecord] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('all'); 
-  const [filterStatus, setFilterStatus] = useState('all'); 
+  const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const token = localStorage.getItem('token');
 
   const initialForm = {
-    type: 'lend', category: 'money', partner: '', amount: '', itemName: '', 
+    type: 'lend', category: 'money', partner: '', amount: '', itemName: '',
     dueDate: getDefaultDueDate(), interestRate: 0, interestType: 'none', notes: '', proofImage: ''
   };
   const [formData, setFormData] = useState(initialForm);
@@ -39,17 +40,17 @@ const BorrowTracker = () => {
   const fetchRecords = async () => {
     if (!token) return;
     try {
-      const response = await fetch('https://api-tai-chinh.onrender.com/api/borrows', {
+      const response = await fetch(apiUrl('/api/borrows'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
       setRecords(Array.isArray(data) ? data : []);
-    } catch (error) { 
-      console.error('Lỗi fetch:', error); 
+    } catch (error) {
+      console.error('Lỗi fetch:', error);
       setRecords([]);
     }
   };
-  
+
   useEffect(() => { fetchRecords(); }, [token]);
 
   const handleImageUpload = (e) => {
@@ -78,34 +79,41 @@ const BorrowTracker = () => {
       const submitData = { ...formData };
       if (!submitData.dueDate) delete submitData.dueDate;
       if (submitData.category === 'item') {
-        submitData.amount = 0; submitData.interestRate = 0; submitData.interestType = 'none';
+        submitData.amount = 0;
+        submitData.interestRate = 0;
+        submitData.interestType = 'none';
       } else {
-        submitData.itemName = ''; submitData.amount = Number(submitData.amount);
+        submitData.itemName = '';
+        submitData.amount = Number(submitData.amount);
       }
 
-      const url = editingId ? `https://api-tai-chinh.onrender.com/api/borrows/${editingId}` : 'https://api-tai-chinh.onrender.com/api/borrows';
+      const url = editingId
+        ? apiUrl(`/api/borrows/${editingId}`)
+        : apiUrl('/api/borrows');
       const method = editingId ? 'PUT' : 'POST';
 
-      const res = await fetch(url, { 
-        method, 
-        headers: { 
+      const res = await fetch(url, {
+        method,
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        }, 
-        body: JSON.stringify(submitData) 
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(submitData)
       });
 
       const responseData = await res.json();
       if (!res.ok) {
         return alert('❌ Lỗi từ Backend: ' + (responseData.message || 'Không thể lưu bản ghi'));
       }
-      
+
       setFormData(initialForm);
       setEditingId(null);
-      if(document.getElementById('file-upload')) document.getElementById('file-upload').value = '';
+      if (document.getElementById('file-upload')) {
+        document.getElementById('file-upload').value = '';
+      }
       fetchRecords();
-    } catch (error) { 
-      alert('❌ Lỗi kết nối server!'); 
+    } catch (error) {
+      alert('❌ Lỗi kết nối server!');
     }
   };
 
@@ -117,18 +125,18 @@ const BorrowTracker = () => {
       if (!amountStr || isNaN(amountStr)) return;
       payload = { paymentAmount: Number(amountStr) };
     } else {
-      if(!window.confirm('Xác nhận đã nhận lại / trả lại đồ vật này?')) return;
+      if (!window.confirm('Xác nhận đã nhận lại / trả lại đồ vật này?')) return;
     }
-    
-    const res = await fetch(`https://api-tai-chinh.onrender.com/api/borrows/${record._id}/payment`, {
-      method: 'PUT', 
-      headers: { 
+
+    const res = await fetch(apiUrl(`/api/borrows/${record._id}/payment`), {
+      method: 'PUT',
+      headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` 
-      }, 
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(payload)
     });
-    
+
     if (!res.ok) {
       const errData = await res.json();
       return alert('❌ Lỗi thanh toán: ' + (errData.message || 'Không thể xử lý'));
@@ -137,8 +145,8 @@ const BorrowTracker = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Xóa khoản này vĩnh viễn?")) return;
-    const res = await fetch(`https://api-tai-chinh.onrender.com/api/borrows/${id}`, { 
+    if (!window.confirm('Xóa khoản này vĩnh viễn?')) return;
+    const res = await fetch(apiUrl(`/api/borrows/${id}`), {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -151,26 +159,26 @@ const BorrowTracker = () => {
   const safeRecords = Array.isArray(records) ? records : [];
 
   const filteredRecords = safeRecords.filter(record => {
-    const matchSearch = (record.partner && record.partner.toLowerCase().includes(searchTerm.toLowerCase())) || 
-                        (record.itemName && record.itemName.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchSearch = (record.partner && record.partner.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (record.itemName && record.itemName.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchType = filterType === 'all' || record.category === filterType;
     let matchStatus = true;
     if (filterStatus === 'settled') matchStatus = record.status === 'settled';
     if (filterStatus === 'open') matchStatus = record.status !== 'settled';
     if (filterStatus === 'overdue') matchStatus = record.status === 'overdue';
-    
+
     return matchSearch && matchType && matchStatus;
   });
 
   const totalLend = safeRecords.filter(r => r.type === 'lend' && r.category === 'money' && r.status !== 'settled')
-                             .reduce((sum, r) => sum + (r.amount + (r.amount * r.interestRate / 100) - r.amountPaid), 0);
+    .reduce((sum, r) => sum + (r.amount + (r.amount * r.interestRate / 100) - r.amountPaid), 0);
   const totalBorrow = safeRecords.filter(r => r.type === 'borrow' && r.category === 'money' && r.status !== 'settled')
-                              .reduce((sum, r) => sum + (r.amount + (r.amount * r.interestRate / 100) - r.amountPaid), 0);
+    .reduce((sum, r) => sum + (r.amount + (r.amount * r.interestRate / 100) - r.amountPaid), 0);
   const totalOverdue = safeRecords.filter(r => r.status === 'overdue' && r.category === 'money')
-                                .reduce((sum, r) => sum + (r.amount + (r.amount * r.interestRate / 100) - r.amountPaid), 0);
+    .reduce((sum, r) => sum + (r.amount + (r.amount * r.interestRate / 100) - r.amountPaid), 0);
 
   const today = new Date();
-  today.setHours(0,0,0,0);
+  today.setHours(0, 0, 0, 0);
 
   return (
     <div className="borrow-tracker-container">
@@ -204,70 +212,70 @@ const BorrowTracker = () => {
           <h3 style={{ margin: '2px 0 0 0', color: '#2c3e50', fontSize: '17px' }}>{totalOverdue.toLocaleString()} đ</h3>
         </div>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="borrow-form" style={{ background: '#f8f9fa', padding: '15px 20px', borderRadius: '8px', marginBottom: '20px' }}>
         <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '20px', marginBottom: '5px', flexWrap: 'wrap' }}>
           <label style={{ cursor: 'pointer', fontWeight: 'bold', color: formData.category === 'money' ? '#2980b9' : '#7f8c8d' }}>
-            <input type="radio" checked={formData.category === 'money'} onChange={() => setFormData({...formData, category: 'money'})} style={{ marginRight: '5px' }} /> 
+            <input type="radio" checked={formData.category === 'money'} onChange={() => setFormData({ ...formData, category: 'money' })} style={{ marginRight: '5px' }} />
             💵 Giao dịch Tiền
           </label>
           <label style={{ cursor: 'pointer', fontWeight: 'bold', color: formData.category === 'item' ? '#d35400' : '#7f8c8d' }}>
-            <input type="radio" checked={formData.category === 'item'} onChange={() => setFormData({...formData, category: 'item'})} style={{ marginRight: '5px' }} /> 
+            <input type="radio" checked={formData.category === 'item'} onChange={() => setFormData({ ...formData, category: 'item' })} style={{ marginRight: '5px' }} />
             📦 Mượn / Cho mượn Đồ
           </label>
         </div>
 
         <div className="form-field">
-          <label>Loại giao dịch <span style={{color:'red'}}>*</span></label>
-          <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})}>
+          <label>Loại giao dịch <span style={{ color: 'red' }}>*</span></label>
+          <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })}>
             <option value="lend">🟢 Mình cho mượn (Khách nợ)</option>
             <option value="borrow">🔴 Mình đi mượn (Mình nợ)</option>
           </select>
         </div>
 
         <div className="form-field">
-          <label>Đối tác <span style={{color:'red'}}>*</span></label>
-          <input type="text" placeholder="Tên người, liên hệ..." value={formData.partner} onChange={(e) => setFormData({...formData, partner: e.target.value})} required />
+          <label>Đối tác <span style={{ color: 'red' }}>*</span></label>
+          <input type="text" placeholder="Tên người, liên hệ..." value={formData.partner} onChange={(e) => setFormData({ ...formData, partner: e.target.value })} required />
         </div>
 
         <div className="form-field">
-          <label>{formData.category === 'money' ? 'Số tiền gốc (VNĐ)' : 'Tên đồ vật'} <span style={{color:'red'}}>*</span></label>
+          <label>{formData.category === 'money' ? 'Số tiền gốc (VNĐ)' : 'Tên đồ vật'} <span style={{ color: 'red' }}>*</span></label>
           {formData.category === 'money' ? (
-            <input type="number" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required min="0" placeholder="VD: 500000" />
+            <input type="number" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required min="0" placeholder="VD: 500000" />
           ) : (
-            <input type="text" value={formData.itemName} onChange={(e) => setFormData({...formData, itemName: e.target.value})} required placeholder="VD: Sổ tay, Sạc pin..." />
+            <input type="text" value={formData.itemName} onChange={(e) => setFormData({ ...formData, itemName: e.target.value })} required placeholder="VD: Sổ tay, Sạc pin..." />
           )}
         </div>
-        
+
         <div className="form-field">
           <label>Hạn trả (Mặc định +30 ngày)</label>
-          <input type="date" value={formData.dueDate} onChange={(e) => setFormData({...formData, dueDate: e.target.value})} />
+          <input type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} />
         </div>
 
         {formData.category === 'money' ? (
-           <>
-             <div className="form-field">
-               <label>Lãi suất (%) - Tùy chọn</label>
-               <input type="number" value={formData.interestRate} onChange={(e) => setFormData({...formData, interestRate: e.target.value})} min="0" placeholder="VD: 5" />
-             </div>
-             <div className="form-field">
-               <label>Kỳ hạn lãi</label>
-               <select value={formData.interestType} onChange={(e) => setFormData({...formData, interestType: e.target.value})}>
-                 <option value="none">Không tính lãi</option>
-                 <option value="monthly">%/Tháng</option>
-                 <option value="yearly">%/Năm</option>
-               </select>
-             </div>
-           </>
+          <>
+            <div className="form-field">
+              <label>Lãi suất (%) - Tùy chọn</label>
+              <input type="number" value={formData.interestRate} onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })} min="0" placeholder="VD: 5" />
+            </div>
+            <div className="form-field">
+              <label>Kỳ hạn lãi</label>
+              <select value={formData.interestType} onChange={(e) => setFormData({ ...formData, interestType: e.target.value })}>
+                <option value="none">Không tính lãi</option>
+                <option value="monthly">%/Tháng</option>
+                <option value="yearly">%/Năm</option>
+              </select>
+            </div>
+          </>
         ) : (
           <div className="form-field" style={{ gridColumn: 'span 2' }}></div>
         )}
 
         <div className="form-field" style={{ gridColumn: 'span 1' }}>
           <label>Ghi chú</label>
-          <input type="text" placeholder="Ghi chú thêm..." value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} />
+          <input type="text" placeholder="Ghi chú thêm..." value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
         </div>
-        
+
         <div className="form-field" style={{ gridColumn: 'span 2' }}>
           <label>Ảnh chứng từ (Tùy chọn)</label>
           <div className="file-upload-box">
@@ -313,49 +321,49 @@ const BorrowTracker = () => {
           </thead>
           <tbody>
             {filteredRecords.length === 0 ? (
-              <tr><td colSpan="5" style={{textAlign: 'center', padding: '20px'}}>Không tìm thấy kết quả phù hợp.</td></tr>
+              <tr><td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>Không tìm thấy kết quả phù hợp.</td></tr>
             ) : filteredRecords.map(record => {
               const isMoney = record.category === 'money';
               const totalDue = isMoney ? record.amount + (record.amount * (record.interestRate / 100)) : 0;
               const remaining = totalDue - record.amountPaid;
               const progressPercent = totalDue > 0 ? Math.min(100, Math.round((record.amountPaid / totalDue) * 100)) : 0;
-              
-              const typeColor = record.type === 'lend' ? '#27ae60' : '#e74c3c'; 
+
+              const typeColor = record.type === 'lend' ? '#27ae60' : '#e74c3c';
               const typeBg = record.type === 'lend' ? '#e8f5e9' : '#fdedec';
 
               let daysLeftText = '';
-              let daysLeftColor = '#7f8c8d'; 
+              let daysLeftColor = '#7f8c8d';
               if (record.dueDate && record.status !== 'settled') {
                 const due = new Date(record.dueDate);
-                due.setHours(0,0,0,0);
+                due.setHours(0, 0, 0, 0);
                 const diffDays = Math.round((due - today) / (1000 * 60 * 60 * 24));
-                
+
                 if (diffDays > 7) {
                   daysLeftText = `(Còn ${diffDays} ngày)`;
                   daysLeftColor = '#7f8c8d';
                 } else if (diffDays > 0 && diffDays <= 7) {
                   daysLeftText = `(Còn ${diffDays} ngày)`;
-                  daysLeftColor = '#f39c12'; 
+                  daysLeftColor = '#f39c12';
                 } else if (diffDays === 0) {
-                  daysLeftText = `(Hôm nay)`;
-                  daysLeftColor = '#e74c3c'; 
+                  daysLeftText = '(Hôm nay)';
+                  daysLeftColor = '#e74c3c';
                 }
               }
-              
+
               let itemStatusColor = '#7f8c8d';
               if (record.status === 'upcoming' || record.status === 'due_today') itemStatusColor = '#f39c12';
               if (record.status === 'overdue') itemStatusColor = '#e74c3c';
               if (record.status === 'settled') itemStatusColor = '#27ae60';
-              
+
               return (
                 <tr key={record._id}>
                   <td data-label="Đối tác" style={{ padding: '12px 10px' }}>
                     <span style={{ display: 'inline-block', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', color: typeColor, background: typeBg, marginBottom: '5px' }}>
                       {record.type === 'lend' ? '↑ Cho mượn' : '↓ Đi mượn'}
-                    </span><br/>
+                    </span><br />
                     <strong style={{ color: '#2c3e50', fontSize: '13.5px' }}>{record.partner}</strong>
                   </td>
-                  
+
                   <td data-label="Khoản mượn" style={{ padding: '12px 10px' }}>
                     {isMoney ? (
                       <div style={{ marginBottom: '6px' }}>
@@ -366,9 +374,9 @@ const BorrowTracker = () => {
                       <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#2c3e50', marginBottom: '6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>📦 {record.itemName}</div>
                     )}
                     {record.notes && <div style={{ fontSize: '11px', color: '#2c3e50', padding: '4px 6px', background: '#f1f2f6', borderRadius: '4px', display: 'inline-block', marginBottom: '5px' }}>📝 {record.notes}</div>}
-                    {record.proofImage && <img src={record.proofImage} alt="Chứng từ" onClick={() => setModalImage(record.proofImage)} className="proof-thumb" title="Xem ảnh lớn" style={{cursor: 'pointer'}} />}
+                    {record.proofImage && <img src={record.proofImage} alt="Chứng từ" onClick={() => setModalImage(record.proofImage)} className="proof-thumb" title="Xem ảnh lớn" style={{ cursor: 'pointer' }} />}
                   </td>
-                  
+
                   <td data-label="Tiến độ" style={{ padding: '12px 10px' }}>
                     {isMoney ? (
                       <>
@@ -391,7 +399,7 @@ const BorrowTracker = () => {
                       </span>
                     )}
                   </td>
-                  
+
                   <td data-label="Hạn" style={{ padding: '12px 10px' }}>
                     <div style={{ fontSize: '12px', marginBottom: '5px', color: '#34495e', fontWeight: '500' }}>
                       📅 {formatVN(record.dueDate)}
@@ -399,10 +407,10 @@ const BorrowTracker = () => {
                     </div>
                     <span style={{
                       padding: '3px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', color: '#fff',
-                      backgroundColor: record.status === 'settled' ? '#2ecc71' : 
-                                       record.status === 'overdue' ? '#e74c3c' : 
-                                       record.status === 'due_today' ? '#d35400' :
-                                       record.status === 'upcoming' ? '#f39c12' : '#3498db'
+                      backgroundColor: record.status === 'settled' ? '#2ecc71' :
+                        record.status === 'overdue' ? '#e74c3c' :
+                          record.status === 'due_today' ? '#d35400' :
+                            record.status === 'upcoming' ? '#f39c12' : '#3498db'
                     }}>
                       {record.status === 'settled' ? 'Xong' : record.status === 'overdue' ? 'Quá hạn' : record.status === 'due_today' ? 'Hôm nay' : record.status === 'upcoming' ? 'Sắp tới' : 'Đang mở'}
                     </span>
@@ -419,7 +427,7 @@ const BorrowTracker = () => {
                           <button onClick={() => handlePayment(record)} style={{ background: '#2ecc71', color: 'white', border: 'none', width: '100%', padding: '8px 10px', fontSize: '13px', borderRadius: '6px', cursor: 'pointer' }}>✅ Trả đồ</button>
                         )
                       )}
-                      
+
                       <div style={{ display: 'flex', gap: '6px', width: '100%' }}>
                         <button onClick={() => handleEditClick(record)} style={{ background: '#f39c12', color: 'white', border: 'none', flex: 1, padding: '8px 10px', fontSize: '13px', borderRadius: '6px', cursor: 'pointer' }}>Sửa</button>
                         <button onClick={() => handleDelete(record._id)} style={{ background: '#e74c3c', color: 'white', border: 'none', flex: 1, padding: '8px 10px', fontSize: '13px', borderRadius: '6px', cursor: 'pointer' }}>Xóa</button>
@@ -468,4 +476,5 @@ const BorrowTracker = () => {
     </div>
   );
 };
+
 export default BorrowTracker;
