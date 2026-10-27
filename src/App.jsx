@@ -8,7 +8,7 @@ import { saveAs } from 'file-saver';
 import { 
   LayoutGrid, ArrowRightLeft, PieChart as PieChartIcon, 
   Target, BookOpen, Sparkles, Wallet, Calendar, FileText, 
-  TrendingUp, TrendingDown, Plus, Trash2, MessageSquare
+  TrendingUp, TrendingDown, Plus, Trash2, MessageSquare, Menu, X
 } from 'lucide-react';
 
 import DashboardChart from './components/DashboardChart';
@@ -57,6 +57,7 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [showProfile, setShowProfile] = useState(false);
   const [activeMenu, setActiveMenu] = useState('01'); 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [formData, setFormData] = useState({ amount: '', type: 'expense', category: 'Ăn uống', note: '', date: getTodayDate() });
   const [showAddForm, setShowAddForm] = useState(false);
@@ -72,7 +73,6 @@ function App() {
   const [filterMonth, setFilterMonth] = useState(currentMonth);
   const [filterYear, setFilterYear] = useState(currentYear);
 
-  // Lấy ngân sách từ LocalStorage user (đã được lưu khi Login)
   const [budget, setBudget] = useState(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -163,7 +163,6 @@ function App() {
     }
   };
 
-  // Cập nhật API Lưu Ngân Sách
   const handleSaveBudget = async () => {
     try {
       await axios.put(apiUrl('/api/auth/budget'), { budget: tempBudget }, {
@@ -172,7 +171,6 @@ function App() {
       setBudget(tempBudget);
       setIsEditingBudget(false);
       
-      // Đồng bộ lại vào LocalStorage của Trình duyệt
       const savedUser = JSON.parse(localStorage.getItem('user'));
       if (savedUser) {
         savedUser.monthlyBudget = tempBudget;
@@ -243,16 +241,40 @@ function App() {
     <HelmetProvider>
       {seoTags}
       <div className="app-layout">
-        <aside className="sidebar">
+        {/* Overlay mờ màn hình khi mở menu mobile */}
+        {mobileMenuOpen && (
+          <div 
+            onClick={() => setMobileMenuOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 40
+            }}
+          />
+        )}
+
+        {/* Sidebar Responsive */}
+        <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
           <div className="sidebar-logo">
             <div className="sidebar-logo-icon"><Wallet size={20} color="white" /></div>
             <div className="sidebar-logo-text"><h2>moneo</h2><span>Personal Finance OS</span></div>
+            <button className="mobile-close-btn" onClick={() => setMobileMenuOpen(false)}>
+              <X size={20} color="white" />
+            </button>
           </div>
           <nav className="sidebar-menu">
             {sidebarItems.map((item) => {
               const IconComponent = item.icon;
               return (
-                <button key={item.id} className={`sidebar-item ${activeMenu === item.id ? 'active' : ''}`} onClick={() => setActiveMenu(item.id)}>
+                <button 
+                  key={item.id} 
+                  className={`sidebar-item ${activeMenu === item.id ? 'active' : ''}`} 
+                  onClick={() => {
+                    setActiveMenu(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                >
                   <IconComponent size={18} /><span>{item.label}</span>
                 </button>
               );
@@ -262,14 +284,20 @@ function App() {
 
         <main className="main-content">
           <header className="top-header">
-            <div>
-              <h1 className="page-title">
-                {activeMenu === '01' && 'Tổng quan tài chính'}{activeMenu === '02' && 'Sổ quản lý giao dịch'}{activeMenu === '03' && 'Phân tích & Báo cáo'}{activeMenu === '04' && 'Khoản vay & Công nợ'}{activeMenu === '05' && 'Lập kế hoạch & Mục tiêu'}{activeMenu === '06' && 'Trợ lý Moneo Copilot AI'}
-              </h1>
-              <div className="page-subtitle">Dữ liệu kỳ T{filterMonth}/{filterYear}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(true)}>
+                <Menu size={22} color="#1e293b" />
+              </button>
+              <div>
+                <h1 className="page-title">
+                  {activeMenu === '01' && 'Tổng quan tài chính'}{activeMenu === '02' && 'Sổ quản lý giao dịch'}{activeMenu === '03' && 'Phân tích & Báo cáo'}{activeMenu === '04' && 'Khoản vay & Công nợ'}{activeMenu === '05' && 'Lập kế hoạch & Mục tiêu'}{activeMenu === '06' && 'Trợ lý Moneo Copilot AI'}
+                </h1>
+                <div className="page-subtitle">Dữ liệu kỳ T{filterMonth}/{filterYear}</div>
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'white', padding: '6px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+
+            <div className="header-actions">
+              <div className="date-filter-box">
                 <Calendar size={15} color="#64748b" />
                 <select value={filterMonth} onChange={(e) => setFilterMonth(Number(e.target.value))} style={{ border: 'none', padding: 0, width: 'auto', fontSize: '13px', fontWeight: '600', outline: 'none' }}>
                   {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => <option key={m} value={m}>Tháng {m}</option>)}
@@ -335,7 +363,7 @@ function App() {
 
           {activeMenu === '02' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                 <button className="btn-secondary" onClick={() => { if (!showAddForm) { setFormData({ amount: '', type: 'expense', category: 'Ăn uống', note: '', date: getTodayDate() }); } setShowAddForm(!showAddForm); }} style={{ backgroundColor: showAddForm ? '#C54B40' : '#0D9668' }}>
                   <Plus size={16} /> {showAddForm ? 'Hủy form' : 'Thêm giao dịch'}
                 </button>
@@ -354,13 +382,13 @@ function App() {
               {showAddForm && (
                 <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', border: '1px solid #10b981', marginBottom: '24px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 20px 0', color: '#1e293b' }}>Nhập giao dịch mới</h3>
-                  <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px 24px' }}>
+                  <form onSubmit={handleSubmit} className="form-grid">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}><label style={{ fontSize: '14px', color: '#475569', fontWeight: '500' }}>Số tiền (đ)</label><input type="number" name="amount" value={formData.amount} onChange={handleChange} required placeholder="VD: 55000" style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} /></div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}><label style={{ fontSize: '14px', color: '#475569', fontWeight: '500' }}>Loại giao dịch</label><select name="type" value={formData.type} onChange={handleChange} style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', backgroundColor: '#fff' }}><option value="expense">Khoản chi</option><option value="income">Khoản thu</option></select></div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}><label style={{ fontSize: '14px', color: '#475569', fontWeight: '500' }}>Ngày giao dịch</label><input type="date" name="date" value={formData.date} onChange={handleChange} max={getTodayDate()} required style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} /></div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}><label style={{ fontSize: '14px', color: '#475569', fontWeight: '500' }}>Danh mục</label><select name="category" value={formData.category} onChange={handleChange} style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', backgroundColor: '#fff' }}><option value="Ăn uống">Ăn uống</option><option value="Di chuyển">Di chuyển</option><option value="Mua sắm">Mua sắm</option><option value="Nhà cửa">Nhà cửa</option><option value="Tiền lương">Tiền lương</option><option value="Khác">Khác</option></select></div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', gridColumn: '1 / -1' }}><label style={{ fontSize: '14px', color: '#475569', fontWeight: '500' }}>Ghi chú</label><input type="text" name="note" value={formData.note} onChange={handleChange} placeholder="VD: Cà phê sáng" style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} /></div>
-                    <div style={{ display: 'flex', gap: '12px', gridColumn: '1 / -1', marginTop: '10px' }}>
+                    <div className="full-width-field" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}><label style={{ fontSize: '14px', color: '#475569', fontWeight: '500' }}>Ghi chú</label><input type="text" name="note" value={formData.note} onChange={handleChange} placeholder="VD: Cà phê sáng" style={{ padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }} /></div>
+                    <div className="full-width-field" style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
                       <button type="submit" style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}>Lưu thông tin</button>
                       <button type="button" onClick={() => setShowAddForm(false)} style={{ backgroundColor: '#fff', color: '#64748b', border: '1px solid #e2e8f0', padding: '10px 24px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>Đóng</button>
                     </div>
@@ -390,7 +418,7 @@ function App() {
             </div>
           )}
 
-          {activeMenu === '03' && ( <div style={{ width: '100%' }}><DashboardChart data={filteredTransactions} /></div> )}
+          {activeMenu === '03' && ( <div style={{ width: '100%', overflowX: 'auto' }}><DashboardChart data={filteredTransactions} /></div> )}
           {activeMenu === '04' && ( <BorrowTracker /> )}
 
           {activeMenu === '05' && (
