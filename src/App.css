@@ -13,7 +13,16 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html, body, #root { width: 100%; min-height: 100%; margin: 0; padding: 0; }
+
+/* ÉP BUỘC TRÀN VIỀN - PHÁ VỠ MỌI GIỚI HẠN CỦA VITE */
+html, body, #root { 
+  width: 100% !important; 
+  max-width: 100% !important;
+  min-height: 100vh !important; 
+  margin: 0 !important; 
+  padding: 0 !important; 
+  overflow-x: hidden !important;
+}
 
 body {
   font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -28,7 +37,7 @@ button { -webkit-tap-highlight-color: transparent; }
 img { max-width: 100%; }
 
 /* --- LAYOUT & SIDEBAR --- */
-.app-layout { display: flex; width: 100%; min-height: 100vh; background: var(--bg-soft-gray); position: relative; }
+.app-layout { display: flex; width: 100%; min-height: 100vh; background: var(--bg-soft-gray); position: relative; overflow-x: hidden; }
 
 .sidebar {
   width: 256px;
@@ -396,78 +405,139 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .dashboard-hero-card { padding: 26px; }
 }
 
+/* ============================================================ */
+/* GIAO DIỆN ĐIỆN THOẠI                                         */
+/* ============================================================ */
 @media (max-width: 768px) {
+  body { font-size: 16px; }
+
   .mobile-menu-toggle,
-  .mobile-close-btn {
-    display: block;
-  }
+  .mobile-close-btn { display: block !important; }
 
   .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 260px;
-    z-index: 100;
+    position: fixed !important;
+    top: 0; left: 0; bottom: 0;
+    width: min(280px, 85vw) !important;
+    z-index: 1000 !important;
     transform: translateX(-100%);
   }
-
-  .sidebar.mobile-open {
-    transform: translateX(0);
-  }
-
-  .sidebar-logo {
-    justify-content: space-between;
-  }
-
-  .sidebar-menu {
-    display: flex;
-    flex-direction: column;
-  }
+  .sidebar.mobile-open { transform: translateX(0) !important; }
+  .sidebar-logo { justify-content: space-between !important; }
 
   .main-content {
     margin-left: 0 !important;
-    padding: 16px !important;
+    padding: 12px 12px calc(24px + env(safe-area-inset-bottom)) !important;
     width: 100% !important;
+    max-width: 100% !important;
   }
 
+  /* Header: hàng 1 = menu + tiêu đề, hàng 2 = bộ lọc tháng/năm giãn hết chiều ngang, avatar nằm bên phải */
   .top-header {
-    flex-direction: column;
-    align-items: flex-start !important;
-    gap: 12px;
-    margin-bottom: 20px;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
   }
+  .page-title { font-size: 20px !important; line-height: 1.25 !important; }
+  .page-subtitle { font-size: 13px !important; margin-top: 2px !important; }
+  .header-actions { width: 100% !important; justify-content: space-between; gap: 10px !important; }
+  .date-filter-box { flex: 1 1 auto; min-width: 0; padding: 4px 10px !important; }
 
-  .header-actions {
-    width: 100%;
-    justify-content: space-between;
+  /* Thẻ nội dung */
+  .app-layout .card,
+  .dashboard-hero-card {
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+    border-radius: 14px !important;
   }
+  .app-layout .card-header { font-size: 17px; margin-bottom: 14px; padding-bottom: 10px; }
 
-  .page-title {
-    font-size: 20px !important;
-    line-height: 1.3 !important;
-    white-space: normal !important;
+  /* Thẻ số dư: Tổng thu / Tổng chi nằm cạnh nhau cho gọn */
+  .balance-title { font-size: 14px; }
+  .balance-trend { font-size: 13px; }
+  .dashboard-hero-card .balance-amount { font-size: 30px !important; }
+  .hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    margin-top: 16px;
+    padding-top: 16px;
   }
+  .stat-label { font-size: 12px; }
+  .stat-value { font-size: 17px !important; }
 
   .grid-2-cols,
-  .hero-stats,
-  .form-grid,
+  .form-grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+
+  /* Danh sách giao dịch */
+  .tx-item { gap: 10px; padding: 12px 0; }
+  .tx-item > * { min-width: 0; }
+  .tx-icon-bg { width: 38px; height: 38px; flex-basis: 38px; margin-right: 8px; }
+
+  .recharts-wrapper { margin: 0 auto !important; max-width: 100%; }
+
+  /* ---------- SỔ NỢ ---------- */
+  .borrow-tracker-title { font-size: 20px !important; margin-bottom: 14px !important; }
+
+  /* Form 1 cột. "grid-column: 1 / -1" để thắng các style span 2 / span 3 gán trực tiếp trong JSX
+     (nếu không, các style đó tạo thêm cột ẩn làm form bị tràn sang phải) */
   .borrow-tracker-container .borrow-form {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding: 14px !important;
   }
+  .borrow-tracker-container .borrow-form > * { grid-column: 1 / -1 !important; min-width: 0; }
+  .borrow-tracker-container .borrow-form > div:first-child { flex-wrap: wrap !important; gap: 10px 16px !important; }
+  .borrow-tracker-container .borrow-form button[type='submit'] { width: 100% !important; }
 
-  .app-layout .card { padding: 18px; margin-bottom: 16px; }
-  .dashboard-hero-card { padding: 20px; margin-bottom: 16px; }
-  .hero-stats { gap: 14px; }
-  .stat-value { font-size: 20px; }
-
-  .borrow-tracker-title { font-size: 22px !important; }
-  .borrow-tracker-container .borrow-form { padding: 16px !important; }
   .borrow-tracker-container .filter-bar { flex-direction: column; align-items: stretch; }
   .borrow-tracker-container .filter-bar input,
   .borrow-tracker-container .filter-bar select { width: 100%; }
+
+  /* Bảng 880px rộng không vừa điện thoại: chuyển mỗi dòng thành một thẻ dọc */
+  .borrow-table-wrapper { border: 0; background: transparent; overflow: visible; }
+  .borrow-tracker-container .borrow-table { display: block; min-width: 0 !important; table-layout: auto; }
+  .borrow-tracker-container .borrow-table thead { display: none; }
+  .borrow-tracker-container .borrow-table tbody { display: block; }
+  .borrow-tracker-container .borrow-table tbody tr {
+    display: block;
+    margin-bottom: 12px;
+    padding: 6px 0;
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+  }
+  .borrow-tracker-container .borrow-table tbody tr:hover { background: #fff; }
+  .borrow-tracker-container .borrow-table tbody td {
+    display: block;
+    width: 100% !important;
+    padding: 8px 14px !important;
+    border-bottom: 0;
+  }
+  .borrow-tracker-container .borrow-table tbody td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .borrow-tracker-container .borrow-table tbody td:last-child {
+    margin-top: 4px;
+    padding-top: 12px !important;
+    border-top: 1px solid #f1f5f9;
+  }
+  .borrow-tracker-container .borrow-table .action-buttons { justify-content: flex-start !important; flex-wrap: wrap; }
+  .borrow-tracker-container .borrow-table .action-buttons button { flex: 1 1 auto; }
 }
 
 @media (max-width: 480px) {
   .tx-item { align-items: flex-start; }
+}
+
+/* Màn hình rất hẹp: Tổng thu / Tổng chi quay lại xếp dọc */
+@media (max-width: 360px) {
+  .hero-stats { grid-template-columns: 1fr !important; }
 }
