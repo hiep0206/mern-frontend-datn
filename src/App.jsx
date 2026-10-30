@@ -8,7 +8,7 @@ import { saveAs } from 'file-saver';
 import { 
   LayoutGrid, ArrowRightLeft, PieChart as PieChartIcon, 
   Target, BookOpen, Sparkles, Wallet, Calendar, FileText, 
-  TrendingUp, TrendingDown, Plus, Trash2, MessageSquare, Menu, X
+  TrendingUp, TrendingDown, Plus, Trash2, MessageSquare, Menu, X, ArrowLeft
 } from 'lucide-react';
 
 import DashboardChart from './components/DashboardChart';
@@ -53,10 +53,25 @@ const getTodayDate = () => {
   return `${year}-${month}-${day}`;
 };
 
+// Tên hiển thị trên thanh địa chỉ cho từng mục (ví dụ: /#giao-dich)
+const MENU_SLUGS = {
+  '01': 'tong-quan',
+  '02': 'giao-dich',
+  '03': 'phan-tich',
+  '04': 'khoan-vay',
+  '05': 'muc-tieu',
+  '06': 'copilot',
+};
+
+const getMenuFromHash = () => {
+  const slug = window.location.hash.replace('#', '');
+  return Object.keys(MENU_SLUGS).find((id) => MENU_SLUGS[id] === slug) || '01';
+};
+
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [showProfile, setShowProfile] = useState(false);
-  const [activeMenu, setActiveMenu] = useState('01'); 
+  const [activeMenu, setActiveMenu] = useState(getMenuFromHash); 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [formData, setFormData] = useState({ amount: '', type: 'expense', category: 'Ăn uống', note: '', date: getTodayDate() });
@@ -114,6 +129,29 @@ function App() {
       });
     return () => { isCurrent = false; };
   }, [token]);
+
+  // Đồng bộ mục đang mở với lịch sử trình duyệt:
+  // nút lùi/tiến của trình duyệt và thao tác vuốt lùi trên điện thoại đều quay về đúng mục trước đó
+  useEffect(() => {
+    window.history.replaceState(null, '', `#${MENU_SLUGS[getMenuFromHash()]}`);
+    const handlePopState = () => {
+      setActiveMenu(getMenuFromHash());
+      setMobileMenuOpen(false);
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Chuyển mục và ghi vào lịch sử để có thể quay lại
+  const goTo = (id) => {
+    if (id !== activeMenu) {
+      window.history.pushState(null, '', `#${MENU_SLUGS[id]}`);
+      setActiveMenu(id);
+      window.scrollTo(0, 0);
+    }
+    setMobileMenuOpen(false);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -270,10 +308,7 @@ function App() {
                 <button 
                   key={item.id} 
                   className={`sidebar-item ${activeMenu === item.id ? 'active' : ''}`} 
-                  onClick={() => {
-                    setActiveMenu(item.id);
-                    setMobileMenuOpen(false);
-                  }}
+                  onClick={() => goTo(item.id)}
                 >
                   <IconComponent size={18} /><span>{item.label}</span>
                 </button>
@@ -288,6 +323,11 @@ function App() {
               <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(true)}>
                 <Menu size={22} color="#1e293b" />
               </button>
+              {activeMenu !== '01' && (
+                <button type="button" className="back-btn" onClick={() => goTo('01')} aria-label="Quay lại Tổng quan" title="Quay lại Tổng quan">
+                  <ArrowLeft size={20} />
+                </button>
+              )}
               <div>
                 <h1 className="page-title">
                   {activeMenu === '01' && 'Tổng quan tài chính'}{activeMenu === '02' && 'Sổ quản lý giao dịch'}{activeMenu === '03' && 'Phân tích & Báo cáo'}{activeMenu === '04' && 'Khoản vay & Công nợ'}{activeMenu === '05' && 'Lập kế hoạch & Mục tiêu'}{activeMenu === '06' && 'Trợ lý Moneo Copilot AI'}
@@ -341,10 +381,10 @@ function App() {
                   <span style={{ fontSize: '11px', background: '#0D9668', color: 'white', padding: '2px 8px', borderRadius: '12px', fontWeight: '700' }}>AI</span>
                 </div>
                 <p style={{ margin: '0 0 12px 0', fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>Tháng này bạn dư ra <strong>{netChange.toLocaleString('vi-VN')} đ</strong>. Mức chi tiêu hiện tại đang chiếm {budget > 0 ? budgetPercent.toFixed(1) : 0}% ngân sách. Hãy xem xét phân bổ phần thặng dư vào các mục tiêu dài hạn.</p>
-                <button onClick={() => setActiveMenu('06')} style={{ background: 'none', border: 'none', color: '#0D9668', fontWeight: '700', padding: 0, cursor: 'pointer', fontSize: '13px' }}>Xem phân tích chi tiết →</button>
+                <button onClick={() => goTo('06')} style={{ background: 'none', border: 'none', color: '#0D9668', fontWeight: '700', padding: 0, cursor: 'pointer', fontSize: '13px' }}>Xem phân tích chi tiết →</button>
               </div>
               <div className="card">
-                <div className="card-header"><span>Giao dịch gần đây</span><button onClick={() => setActiveMenu('02')} style={{ background: 'none', border: 'none', color: '#3478F6', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>Xem tất cả →</button></div>
+                <div className="card-header"><span>Giao dịch gần đây</span><button onClick={() => goTo('02')} style={{ background: 'none', border: 'none', color: '#3478F6', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}>Xem tất cả →</button></div>
                 <ul className="tx-list">
                   {filteredTransactions.slice(0, 4).map((t) => (
                     <li key={t._id} className="tx-item">
@@ -352,7 +392,7 @@ function App() {
                         <div className="tx-icon-bg">{t.type === 'expense' ? <TrendingDown size={18} color="#C54B40" /> : <TrendingUp size={18} color="#0D9668" />}</div>
                         <div><strong style={{ display: 'block', fontSize: '14px', color: '#1e293b' }}>{t.category}</strong><span style={{ fontSize: '12px', color: '#64748b' }}>{new Date(t.date || t.createdAt).toLocaleDateString('vi-VN')} {t.note && `• ${t.note}`}</span></div>
                       </div>
-                      <strong className={t.type === 'expense' ? 'text-red' : 'text-emerald'} style={{ fontSize: '15px' }}>{t.type === 'expense' ? '-' : '+'}{t.amount.toLocaleString('vi-VN')} đ</strong>
+                      <strong className={`tx-amount ${t.type === 'expense' ? 'text-red' : 'text-emerald'}`} style={{ fontSize: '15px' }}>{t.type === 'expense' ? '-' : '+'}{t.amount.toLocaleString('vi-VN')} đ</strong>
                     </li>
                   ))}
                   {filteredTransactions.length === 0 && <p style={{ textAlign: 'center', color: '#94a3b8', padding: '15px 0', margin: 0, fontSize: '13px' }}>Chưa có giao dịch nào trong tháng này.</p>}
@@ -405,9 +445,9 @@ function App() {
                         <div className="tx-icon-bg">{t.type === 'expense' ? <TrendingDown size={18} color="#C54B40" /> : <TrendingUp size={18} color="#0D9668" />}</div>
                         <div><strong style={{ display: 'block', fontSize: '14px', color: '#1e293b' }}>{t.category}</strong><span style={{ fontSize: '12px', color: '#64748b' }}>{new Date(t.date || t.createdAt).toLocaleDateString('vi-VN')} - {t.note || 'Không có ghi chú'}</span></div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <strong className={t.type === 'expense' ? 'text-red' : 'text-emerald'} style={{ fontSize: '15px' }}>{t.type === 'expense' ? '-' : '+'}{t.amount.toLocaleString('vi-VN')} đ</strong>
-                        <button onClick={() => handleDelete(t._id)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                      <div className="tx-actions">
+                        <strong className={`tx-amount ${t.type === 'expense' ? 'text-red' : 'text-emerald'}`} style={{ fontSize: '15px' }}>{t.type === 'expense' ? '-' : '+'}{t.amount.toLocaleString('vi-VN')} đ</strong>
+                        <button className="tx-delete" onClick={() => handleDelete(t._id)} aria-label="Xóa giao dịch"><Trash2 size={16} /></button>
                       </div>
                     </li>
                   ))}

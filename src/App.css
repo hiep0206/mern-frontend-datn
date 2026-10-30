@@ -398,6 +398,41 @@ img { max-width: 100%; }
 
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
 
+/* --- NÚT QUAY LẠI (về Tổng quan) --- */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  background: #fff;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.back-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+/* --- DÒNG GIAO DỊCH: số tiền không xuống dòng, nút xóa luôn thẳng hàng bên phải --- */
+.tx-item > div:first-child { min-width: 0; flex: 1 1 auto; }
+.tx-amount { white-space: nowrap; flex-shrink: 0; }
+.tx-item > .tx-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.tx-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.tx-delete:hover { background: #fef2f2; color: var(--color-muted-red); }
+
 /* --- RESPONSIVE MEDIA QUERIES --- */
 @media (max-width: 1024px) {
   .borrow-tracker-container .borrow-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -540,4 +575,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* Màn hình rất hẹp: Tổng thu / Tổng chi quay lại xếp dọc */
 @media (max-width: 360px) {
   .hero-stats { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 768px) {
+  .back-btn { width: 36px; height: 36px; }
 }
